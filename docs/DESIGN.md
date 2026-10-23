@@ -200,6 +200,13 @@ file = ""   # count written by an external checker; empty = disabled
 
 [server_check]
 file = ""   # "1"/"0" written by an external checker; empty = disabled
+
+[network]
+interfaces = []   # pin NICs explicitly; empty = default-route interface
+
+[wan_info]
+file = ""      # JSON written by `pirostats wan-update` on a timer; empty = disabled
+max_age = 900  # seconds; older updates render as empty
 ```
 
 > The NVIDIA GPU has no `[gpu]` section/autodetect: it's only enabled explicitly
@@ -270,6 +277,8 @@ class Readings:
     screen_brightness: Optional[int] = None
     system_updates:    Optional[int] = None
     server_ok:         Optional[bool] = None
+    wan_ip:            Optional[str] = None
+    wan_geo:           Optional[str] = None
 ```
 
 `sensors.py` exposes `collect` (plus `discover_hardware`/`rescan_peripherals`):

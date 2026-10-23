@@ -42,6 +42,12 @@ there are **zero process forks in the hot path**.
 - **Auto light/dark** — follows the Plasma color scheme, hot-reloaded.
 - **Per-machine overrides** — sensor mappings and item tweaks auto-detected from
   the DMI board/product name, so one config works across all your machines.
+- **Pinned network interfaces** — `[network].interfaces` shows one Up/Down pair
+  per configured NIC while it exists (even with the link down), instead of only
+  the default route.
+- **External IP & geo** — optional `[wan_info]` section: a timer-driven
+  `pirostats wan-update` refreshes a JSON file; the daemon only reads it, so the
+  hot loop never touches the network.
 
 ## Requirements
 

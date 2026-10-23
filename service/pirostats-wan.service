@@ -1,0 +1,7 @@
+[Unit]
+Description=PiroStats external IP/geo updater (writes the [wan_info] JSON)
+Documentation=https://github.com/lucazade/pirostats
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pirostats wan-update %h/.local/state/pirostats/wan-info.json

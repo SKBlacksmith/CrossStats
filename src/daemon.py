@@ -916,6 +916,11 @@ def main() -> None:
     sub.add_parser("list-items",
                    help="Lists the available items and where they can go, then exits")
 
+    p_wan = sub.add_parser("wan-update",
+                           help="Refresh the [wan_info] JSON file (external IP/geo); "
+                                "meant for a systemd --user timer")
+    p_wan.add_argument("file", help="Path of the JSON file to write (the [wan_info] file)")
+
     p_page = sub.add_parser("page",
                             help="Switch the tooltip page (bind to the widget's mouse-wheel commands)")
     p_page.add_argument("step", choices=("next", "prev"),
@@ -936,6 +941,9 @@ def main() -> None:
         run_profile(args.config)
     elif args.command == "list-items":
         run_list_items()
+    elif args.command == "wan-update":
+        from wan_update import update
+        sys.exit(0 if update(args.file) else 1)
     elif args.command == "page":
         run_page(args.step)
     elif args.command == "click":

@@ -47,6 +47,8 @@ uptime               = "Uptime"
 load_avg             = "Load avg"
 system_updates       = "System updates"
 server_check         = "Server check"
+wan_ip               = "WAN IP"
+wan_geo              = "Geo"
 history              = "History"
 
 # Desktop notification text (notifier.py). Metric labels above are reused for

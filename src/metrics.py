@@ -34,7 +34,10 @@ def _ALWAYS(f, r) -> bool:
 # Properties of the DATA, so they live with the metric.
 _g_cpu_temp      = lambda f, r: f._hw.cpu_temp_path is not None
 _g_cpu_turbo     = lambda f, r: f._hw.cpu_turbo_supported
-_g_net           = lambda f, r: f._hw.net_device is not None
+def _g_net(f, r):
+    if f._cfg.network.interfaces:
+        return bool(r.net_speeds)
+    return f._hw.net_device is not None
 _g_disk_io       = lambda f, r: f._hw.disk_io_device is not None
 _g_wifi          = lambda f, r: f._hw.has_wifi
 # The second antenna's row exists only on a radio that has one. The antenna count
@@ -59,6 +62,7 @@ _g_backlight     = lambda f, r: f._hw.has_backlight
 _g_swap          = lambda f, r: r.swap_usage is not None
 _g_updates       = lambda f, r: bool(f._cfg.system_updates.file)
 _g_server        = lambda f, r: bool(f._cfg.server_check.file)
+_g_wan           = lambda f, r: bool(f._cfg.wan_info.file)
 
 
 # ── supported-form sets (the "how" axis a metric admits) ──────────────────────
@@ -156,6 +160,9 @@ METRICS: dict[str, Metric] = dict([
     # ── misc ──
     _m("system_updates", needs={"system_updates"}, gate=_g_updates),
     _m("server_check",   needs={"server_check"},   gate=_g_server),
+    # External IP / geo, from the updater-maintained file (see [wan_info]).
+    _m("wan_ip",  needs={"wan_info"}, gate=_g_wan, surfaces=Surface.TOOLTIP),
+    _m("wan_geo", needs={"wan_info"}, gate=_g_wan, surfaces=Surface.TOOLTIP),
 ])
 
 

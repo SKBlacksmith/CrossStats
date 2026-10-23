@@ -368,6 +368,22 @@ class ServerCheckConfig:
 
 
 @dataclass
+class NetworkConfig:
+    # Explicit interfaces whose presence under /sys/class/net is monitored.
+    # Empty preserves the legacy default-route interface behavior.
+    interfaces: list[str] = field(default_factory=list)
+
+
+@dataclass
+class WanInfoConfig:
+    # Path to a JSON file maintained by an external updater (e.g. a systemd
+    # --user timer): {"ip", "city", "country", "isp", "updated"}. The daemon
+    # only reads the file — no network I/O in the poll loop. Empty = disabled.
+    file: str = ""
+    max_age: int = 900   # seconds; older data renders as empty
+
+
+@dataclass
 class Config:
     display: DisplayConfig = field(default_factory=DisplayConfig)
     bar_panel: BarConfig = field(default_factory=BarConfig)
@@ -394,6 +410,8 @@ class Config:
     battery: BatteryConfig = field(default_factory=BatteryConfig)
     system_updates: SystemUpdatesConfig = field(default_factory=SystemUpdatesConfig)
     server_check: ServerCheckConfig = field(default_factory=ServerCheckConfig)
+    network: NetworkConfig = field(default_factory=NetworkConfig)
+    wan_info: WanInfoConfig = field(default_factory=WanInfoConfig)
     machine: str = ""   # name of the matched machine block (machines.toml), "" if none matched
     # Panel orientation resolved once at load (auto-detected from the Plasma
     # panel edge, or forced via load_config(vertical=…)): picks the
@@ -863,7 +881,9 @@ def load_config(
         disks          = _build_section(DiskConfig,           raw, "disks"),
         battery        = _build_section(BatteryConfig,        raw, "battery"),
         system_updates = _build_section(SystemUpdatesConfig,  raw, "system_updates"),
-        server_check   = _build_section(ServerCheckConfig,    raw, "server_check"),
+        server_check   = _build_section(ServerCheckConfig,  raw, "server_check"),
+        network        = _build_section(NetworkConfig,      raw, "network"),
+        wan_info       = _build_section(WanInfoConfig,       raw, "wan_info"),
         machine        = machine or "",
     )
     _auto_fit_panel(cfg, geo)

@@ -147,6 +147,8 @@ _RENDER.update({
     ("load_avg", Form.VALUE): (lambda f, ident, r, t: [f._load_avg(r, t)]),
     ("system_updates", Form.VALUE): (lambda f, ident, r, t: [f._system_updates(r, t)]),
     ("server_check", Form.VALUE): (lambda f, ident, r, t: [f._server_check(r, t)]),
+    ("wan_ip",  Form.VALUE): (lambda f, ident, r, t: f._string_row("wan_ip",  r.wan_ip,  t)),
+    ("wan_geo", Form.VALUE): (lambda f, ident, r, t: f._string_row("wan_geo", r.wan_geo, t)),
 
     # ── own skeleton (intrinsic form, not from the menu) ──
     ("net_speed", None): (lambda f, ident, r, t: f._net_speed(r, t)),

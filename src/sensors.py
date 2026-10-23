@@ -7,6 +7,7 @@ DaemonState   — mutable inter-poll state (CPU diff, net diff, battery caches)
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -62,6 +63,9 @@ except Exception:
     _GIO_AVAILABLE = False
 
 _system_bus = None
+
+# Kept as a module constant so tests can model hot-plugged interfaces.
+SYS_CLASS_NET = Path("/sys/class/net")
 
 
 def _bus():
@@ -272,7 +276,8 @@ class DaemonState:
     intel_gpu_usage_cache_ts: float = float("-inf")
 
     # Network / disk I/O rate diff (bytes/s from cumulative counters)
-    net_rate: _RateState = field(default_factory=_RateState)    # a=tx, b=rx
+    net_rate: _RateState = field(default_factory=_RateState)    # active route: a=tx, b=rx
+    net_rates: dict[str, _RateState] = field(default_factory=dict)  # configured per-interface rates
     disk_rate: _RateState = field(default_factory=_RateState)   # a=read, b=write
 
     # Battery caches (keyed by UPower path)
@@ -321,6 +326,8 @@ class Readings:
 
     net_up_bps: Optional[int] = None
     net_down_bps: Optional[int] = None
+    # Configured interface → (tx bytes/s, rx bytes/s); absent interfaces are omitted.
+    net_speeds: dict[str, tuple[Optional[int], Optional[int]]] = field(default_factory=dict)
 
     net_device: Optional[str] = None     # e.g. "wlan0", live-detected (handles interface switches)
     ip_address: Optional[str] = None
@@ -370,6 +377,9 @@ class Readings:
     screen_brightness: Optional[int] = None
     system_updates: Optional[int] = None
     server_ok: Optional[bool] = None
+    # External IP / geo, read from the updater-maintained JSON (no network I/O).
+    wan_ip: Optional[str] = None
+    wan_geo: Optional[str] = None
 
 
 # ── Hardware discovery ────────────────────────────────────────────────────────
@@ -513,9 +523,15 @@ def collect(
         with timed_section(timings, "swap_usage"):
             r.swap_usage = _read_swap_usage()
 
-    if "net_speed" in caps and hw.net_device:
+    if "net_speed" in caps:
         with timed_section(timings, "net_speed"):
-            r.net_up_bps, r.net_down_bps = _read_net_speed(state, hw.net_device)
+            if cfg.network.interfaces:
+                r.net_speeds = _read_configured_net_speeds(state, cfg.network.interfaces)
+                if hw.net_device:
+                    r.net_up_bps, r.net_down_bps = r.net_speeds.get(
+                        hw.net_device, (None, None))
+            elif hw.net_device:
+                r.net_up_bps, r.net_down_bps = _read_net_speed(state, hw.net_device)
     _sample_net_history(state, cfg, r)
 
     # net_device/net_ip/wifi_ssid/net_device_ip/wifi_ssid_signal share the
@@ -646,6 +662,13 @@ def collect(
     if "server_check" in caps and cfg.server_check.file:
         with timed_section(timings, "server_check"):
             r.server_ok = _read_server_file(cfg.server_check.file)
+
+    if "wan_info" in caps and cfg.wan_info.file:
+        with timed_section(timings, "wan_info"):
+            wan = _read_wan_file(cfg.wan_info.file, cfg.wan_info.max_age)
+            if wan:
+                r.wan_ip = str(wan["ip"]) if wan.get("ip") else None
+                r.wan_geo = _wan_geo_str(wan)
 
     return r
 
@@ -1610,6 +1633,46 @@ def _read_net_speed(state: DaemonState, device: str) -> tuple[Optional[int], Opt
     return _counter_rate(state.net_rate, counters.bytes_sent, counters.bytes_recv)
 
 
+_IFACE_RE = re.compile(r"[A-Za-z0-9_.:-]{1,15}\Z")
+
+
+def _read_configured_net_speeds(
+    state: DaemonState, interfaces: list[str],
+) -> dict[str, tuple[Optional[int], Optional[int]]]:
+    """Read rates for configured interfaces that physically exist in sysfs.
+
+    Link state is deliberately irrelevant: a present but down interface remains
+    visible with zero rates. Unplugged interfaces are omitted and their rate
+    baseline is discarded, preventing a spike when they return.
+    """
+    configured = list(dict.fromkeys(
+        name for name in interfaces if isinstance(name, str) and _IFACE_RE.fullmatch(name)))
+    for name in set(state.net_rates) - set(configured):
+        state.net_rates.pop(name, None)
+
+    try:
+        pernic = psutil.net_io_counters(pernic=True) or {}
+    except OSError:
+        pernic = {}
+
+    result: dict[str, tuple[Optional[int], Optional[int]]] = {}
+    for name in configured:
+        if not (SYS_CLASS_NET / name).exists():
+            state.net_rates.pop(name, None)
+            continue
+        counters = pernic.get(name)
+        if counters is None:
+            state.net_rates.pop(name, None)
+            continue
+        rate = state.net_rates.setdefault(name, _RateState())
+        if counters.bytes_sent < rate.prev_a or counters.bytes_recv < rate.prev_b:
+            # Driver reset or interface recreation without a visible unplug cycle.
+            rate = state.net_rates[name] = _RateState()
+        # up = tx (bytes_sent), down = rx (bytes_recv)
+        result[name] = _counter_rate(rate, counters.bytes_sent, counters.bytes_recv)
+    return result
+
+
 def _resolve_mounts(cfg: Config) -> list[str]:
     """Ordered list of mountpoints whose disk usage to show. An explicit list in
     [disks].mounts is used as-is; "auto" (the default) discovers the filesystems
@@ -2052,3 +2115,27 @@ def _read_server_file(path: str) -> Optional[bool]:
     if val == "0":
         return False
     return None
+
+
+def _read_wan_file(path: str, max_age: int) -> Optional[dict]:
+    """Reads the WAN info JSON written by an external updater (e.g. a systemd
+    --user timer): {"ip", "city", "country", "isp", "updated"}. Plain file read
+    — the updater, not this poll loop, owns all network I/O. None if missing,
+    unparsable, not an object, or older than max_age seconds (updated field)."""
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    updated = data.get("updated")
+    if isinstance(updated, (int, float)) and time.time() - updated > max_age:
+        return None
+    return data
+
+
+def _wan_geo_str(wan: dict) -> Optional[str]:
+    """'City, Country' from whatever the updater could resolve; None if empty."""
+    parts = [str(wan[key]).strip() for key in ("city", "country") if wan.get(key)]
+    return ", ".join(parts) or None

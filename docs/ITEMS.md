@@ -96,7 +96,7 @@ three families costs nothing on a machine that has one of them. AMD reads plain
 
 | Token | Where | What it shows | Example row |
 | --- | --- | --- | --- |
-| `net_speed` | panel · tooltip | Up/down throughput (adapts to orientation). | `Upload: 2K   Dload: 0` |
+| `net_speed` | panel · tooltip | Up/down throughput (adapts to orientation). By default the interface carrying the default route; with `[network].interfaces` set in the config, one Up/Down pair per configured interface, shown while the interface exists (even with the link down). | `Upload: 2K   Dload: 0` |
 | `wifi_signal` | panel · tooltip | Wi-Fi signal strength, %. | `Signal:  72%` |
 | `wifi_ant` | tooltip | Signal of every antenna on one row, dBm, each colored on its own. | `Antennas:  -61 / -53 dBm` |
 | `wifi_ant1` / `wifi_ant2` | panel | Signal of one antenna, dBm. `wifi_ant2` appears only on a radio with a second antenna. | `-61` |
@@ -104,6 +104,8 @@ three families costs nothing on a machine that has one of them. AMD reads plain
 | `net_device` | tooltip | Active network interface name. | `Network: wlan0` |
 | `net_ip` | tooltip | Local IP address. | `IP: 192.168.1.5` |
 | `net_device_ip` | tooltip | Interface and IP together on one row. | `Network: wlan0 - 192.168.1.5` |
+| `wan_ip` | tooltip | External IP, from a JSON file written by an external updater (`pirostats wan-update` on a timer). | `WAN IP: 203.0.113.7` |
+| `wan_geo` | tooltip | Location of the external IP. | `Geo: Moscow, Russia` |
 | `wifi_ssid` | tooltip | Connected Wi-Fi network name. | `Wifi: MyWifi` |
 | `wifi_ssid_signal` | tooltip | SSID and signal together on one row. | `Wifi: MyWifi - 72%` |
 

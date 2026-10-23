@@ -280,3 +280,20 @@ file = ""   # e.g. "/run/user/1000/pirostats_updates"
 # daemon only reads it. Empty = disabled.
 [server_check]
 file = ""   # e.g. "/run/user/1000/pirostats_server"
+
+
+# ── External IP / geo info ────────────────────────────────────────────────────
+# Path to a JSON file maintained by an external updater (scripts/wan-info-update.py
+# on a systemd --user timer): {"ip", "city", "country", "isp", "updated"}. The
+# daemon only reads the file — no network I/O in the poll loop. Empty = disabled.
+[wan_info]
+file = ""      # e.g. "/run/user/1000/pirostats_wan.json"
+max_age = 900  # seconds; older updates render as empty
+
+
+# ── Network interfaces ────────────────────────────────────────────────────────
+# Empty keeps the legacy active-default-route interface. Set a list to pin
+# specific interfaces; each is shown while its /sys/class/net entry exists,
+# including interfaces whose link is down. Unplugged interfaces are omitted.
+[network]
+interfaces = []   # e.g. ["eno1", "wlp4s0", "enp2s0", "usb0"]

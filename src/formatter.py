@@ -583,6 +583,15 @@ class PanelFormatter:
         dlm  = self._cfg.labels.get("delimiter", "")
         return Cell(text=f"{glyph} {word}{dlm}", css_class=css_class)
 
+    def _explicit_label_cell(self, ident: Ident, tooltip: bool, text: str) -> Cell:
+        """A row label whose identifying text must remain visible on both
+        the compact panel and the full tooltip (used for configured NICs)."""
+        if tooltip:
+            return self._label_cell(ident, True, text=text)
+        glyph = self._cfg.icons.get(ident.metric, "")
+        prefix = f"{glyph} " if glyph else ""
+        return Cell(text=f"{prefix}{text}", css_class=f"label {ident.css}")
+
     def _battery_sys_is_full(self, bat: BatterySys, pv: int) -> bool:
         """True when at 100%, truly fully-charged, or capped at its charge limit."""
         return pv >= 100 or bat.state == "fully-charged" or (bat.limit is not None and pv >= bat.limit)
@@ -954,7 +963,7 @@ class PanelFormatter:
 
     def _dual_rate_rows(
         self, name1: str, bps1: Optional[int], name2: str, bps2: Optional[int],
-        tooltip: bool,
+        tooltip: bool, label1: str | None = None, label2: str | None = None,
     ) -> list[Row]:
         """Two byte-rate metrics (net_speed's Up/Down, disk_io's Read/Write)
         formatted via _net_fmt. Tooltip and horizontal panel: the two side by
@@ -963,8 +972,10 @@ class PanelFormatter:
         as every other item, so they line up in the same column layout instead
         of forming a separate (and possibly wider) block."""
         id1, id2 = Ident(name1), Ident(name2)
-        lbl1 = self._label_cell(id1, tooltip)
-        lbl2 = self._label_cell(id2, tooltip)
+        lbl1 = (self._explicit_label_cell(id1, tooltip, label1) if label1 is not None
+                else self._label_cell(id1, tooltip))
+        lbl2 = (self._explicit_label_cell(id2, tooltip, label2) if label2 is not None
+                else self._label_cell(id2, tooltip))
         val1 = _val_cell(_net_fmt(bps1 or 0), ident=id1)
         val2 = _val_cell(_net_fmt(bps2 or 0), ident=id2)
         if tooltip or not self._vertical:
@@ -976,6 +987,13 @@ class PanelFormatter:
         return [[lbl1, val1], [lbl2, val2]]
 
     def _net_speed(self, r: Readings, tooltip: bool) -> list[Row]:
+        if self._cfg.network.interfaces:
+            rows: list[Row] = []
+            for device, (up, down) in r.net_speeds.items():
+                rows.extend(self._dual_rate_rows(
+                    "net_speed_up", up, "net_speed_down", down, tooltip,
+                    label1=f"{device} Up", label2=f"{device} Down"))
+            return rows
         return self._dual_rate_rows(
             "net_speed_up", r.net_up_bps, "net_speed_down", r.net_down_bps, tooltip)
 
