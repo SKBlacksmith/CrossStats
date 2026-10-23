@@ -647,10 +647,14 @@ PlasmoidItem {
 					// costs no extra process.
 					executable.exec(
 						"sh -c 'mkdir -p " + config.runtimeDir + "/state && "
-						+ "printf \"%s %s %s %s\\n\" " + output.width + " "
+						// 5th field: our own form-factor code (2 = Planar desktop
+						// widget, else the panel edge). The daemon only uses it for
+						// [display].desktop_fit; old 4-field readers ignore it.
+						+ "printf \"%s %s %s %s %s\\n\" " + output.width + " "
 						+ (glyphMetrics.advanceWidth / 10) + " "
 						+ (panelItem.isVertical ? 1 : 0) + " "
-						+ (tooltipGlyphMetrics.advanceWidth / 10)
+						+ (tooltipGlyphMetrics.advanceWidth / 10) + " "
+						+ (plasmoid.formFactor === PlasmaCore.Types.Planar ? 2 : (panelItem.isVertical ? 1 : 0))
 						+ " > " + config.geomFile + "'")
 				}
 			}
