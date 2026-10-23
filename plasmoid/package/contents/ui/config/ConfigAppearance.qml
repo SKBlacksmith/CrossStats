@@ -109,5 +109,11 @@ LibConfig.FormKCM {
 		defaultColor: '#000000'
 		showAlphaChannel: false
 	}
+	LibConfig.CheckBox {
+		visible: root.onDesktop
+		Kirigami.FormData.label: i18n("Width:")
+		configKey: 'desktopFit'
+		text: i18n("Fill the widget width")
+	}
 
 }

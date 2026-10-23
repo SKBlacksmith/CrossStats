@@ -711,12 +711,59 @@ PlasmoidItem {
 		// content-fit: paging is done on the PANEL (a stable surface), never on
 		// the popup, so the popup never resizes out from under the cursor and can
 		// simply follow the content of whatever page the panel selected.
-		Layout.minimumWidth: pinMeasure.contentWidth + pinText.leftPadding + pinText.rightPadding
-		Layout.maximumWidth: Layout.minimumWidth
-		Layout.preferredWidth: Layout.minimumWidth
-		Layout.minimumHeight: pinText.contentHeight + pinText.topPadding + pinText.bottomPadding
-		Layout.maximumHeight: Layout.minimumHeight
-		Layout.preferredHeight: Layout.minimumHeight
+		readonly property int contentWidth: pinMeasure.contentWidth + pinText.leftPadding + pinText.rightPadding
+
+		// Desktop fit mode ("Fill the widget width" in the Appearance page): keep
+		// the width Plasma gives the widget instead of snapping back to the text,
+		// and publish form factor 3 so the daemon renders the pages to it (see
+		// config._apply_desktop_width). The popup from a panel never fits: it must
+		// keep sizing itself to the tooltip content.
+		readonly property bool fitWidth: onDesktop && plasmoid.configuration.desktopFit
+
+		Layout.minimumWidth: fitWidth ? 1 : contentWidth
+		Layout.maximumWidth: fitWidth ? 100000 : contentWidth
+		Layout.preferredWidth: fitWidth ? Math.max(pinText.width, 1) : contentWidth
+		Layout.minimumHeight: fitWidth ? 1 : pinText.contentHeight + pinText.topPadding + pinText.bottomPadding
+		Layout.maximumHeight: fitWidth ? 100000 : pinText.contentHeight + pinText.topPadding + pinText.bottomPadding
+		Layout.preferredHeight: fitWidth ? Math.max(pinText.height, 1)
+		                              : pinText.contentHeight + pinText.topPadding + pinText.bottomPadding
+
+		// The daemon's fit must follow the widget's real width, not the other way
+		// round; these metrics give it the glyph advance at both font sizes.
+		TextMetrics {
+			id: pinGlyphMetrics
+			font: pinText.font
+			text: "██████████"
+			onAdvanceWidthChanged: pinItem.publishGeometry()
+		}
+		TextMetrics {
+			id: pinTooltipGlyphMetrics
+			font.family: pinText.font.family
+			font.pointSize: pinText.font.pointSize
+			text: "██████████"
+			onAdvanceWidthChanged: pinItem.publishGeometry()
+		}
+		// Same contract as the panel's publisher, but for the desktop: usable is the
+		// text area inside the padding, and the form-factor code says whether the
+		// widget holds its width (3) or still sizes to content (2). Skipped while
+		// the pinned popup is up — that is the same item at a different width.
+		function publishGeometry() {
+			if (!onDesktop || widget.expanded)
+				return
+			var usable = pinText.width - pinText.leftPadding - pinText.rightPadding
+			if (usable <= 0 || pinGlyphMetrics.advanceWidth <= 0)
+				return
+			executable.exec(
+				"sh -c 'mkdir -p " + config.runtimeDir + "/state && "
+				+ "printf \"%s %s %s %s %s\\n\" " + usable + " "
+				+ (pinGlyphMetrics.advanceWidth / 10) + " 0 "
+				+ (pinTooltipGlyphMetrics.advanceWidth / 10) + " "
+				+ (pinItem.fitWidth ? 3 : 2)
+				+ " > " + config.geomFile + "'")
+		}
+		onWidthChanged: publishGeometry()
+		onFitWidthChanged: publishGeometry()
+		Component.onCompleted: publishGeometry()
 
 		// This same full representation serves two very different contexts: inline
 		// on the desktop (the widget itself) and the pinned popup from a panel. The
