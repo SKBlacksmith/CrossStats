@@ -115,5 +115,12 @@ LibConfig.FormKCM {
 		configKey: 'desktopFit'
 		text: i18n("Fill the widget width")
 	}
+	LibConfig.SpinBox {
+		visible: root.onDesktop && plasmoid.configuration.desktopFit
+		Kirigami.FormData.label: i18n("Width, px (0 = fit text):")
+		configKey: 'desktopWidth'
+		minimumValue: 0
+		maximumValue: 2000
+	}
 
 }
