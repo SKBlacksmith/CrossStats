@@ -100,6 +100,15 @@ PlasmoidItem {
 		onTriggered: widget.wheelInGesture = false
 	}
 
+	// The family every text here is drawn with: the configured one if it is
+	// installed, otherwise the fixed-width font of the KDE font settings. Never the
+	// proportional UI font: the layout pads columns with spaces, so it only holds
+	// in a monospace font.
+	readonly property string textFamily: {
+		var f = plasmoid.configuration.fontFamily
+		return (f && Qt.fontFamilies().indexOf(f) >= 0) ? f : Kirigami.Theme.fixedWidthFont.family
+	}
+
 	Item {
 		id: config
 		// The daemon publishes into a per-user runtime directory, and we resolve the
@@ -473,7 +482,7 @@ PlasmoidItem {
 			wrapMode: Text.NoWrap
 			elide: Text.ElideNone
 			font.pointSize: plasmoid.configuration.useTooltipFontSize ? plasmoid.configuration.tooltipFontSize : plasmoid.configuration.fontSize
-			font.family: plasmoid.configuration.fontFamily || Kirigami.Theme.defaultFont.family
+			font.family: widget.textFamily
 			font.weight: plasmoid.configuration.bold ? Font.Bold : Font.Normal
 			font.italic: plasmoid.configuration.italic
 			font.underline: plasmoid.configuration.underline
@@ -490,7 +499,7 @@ PlasmoidItem {
 			wrapMode: Text.NoWrap
 			elide: Text.ElideNone
 			font.pointSize: plasmoid.configuration.useTooltipFontSize ? plasmoid.configuration.tooltipFontSize : plasmoid.configuration.fontSize
-			font.family: plasmoid.configuration.fontFamily || Kirigami.Theme.defaultFont.family
+			font.family: widget.textFamily
 			font.weight: plasmoid.configuration.bold ? Font.Bold : Font.Normal
 			font.italic: plasmoid.configuration.italic
 			font.underline: plasmoid.configuration.underline
@@ -683,7 +692,7 @@ PlasmoidItem {
 			onLinkActivated: Qt.openUrlExternally(link)
 
 			font.pointSize: plasmoid.configuration.fontSize
-			font.family: plasmoid.configuration.fontFamily || Kirigami.Theme.defaultFont.family
+			font.family: widget.textFamily
 			font.weight: plasmoid.configuration.bold ? Font.Bold : Font.Normal
 			font.italic: plasmoid.configuration.italic
 			font.underline: plasmoid.configuration.underline
@@ -867,8 +876,8 @@ PlasmoidItem {
 			textFormat: Text.RichText
 			wrapMode: Text.NoWrap
 			elide: Text.ElideNone
-			font.pointSize: plasmoid.configuration.useTooltipFontSize ? plasmoid.configuration.tooltipFontSize : plasmoid.configuration.fontSize
-			font.family: plasmoid.configuration.fontFamily || Kirigami.Theme.defaultFont.family
+			font.pointSize: (onDesktop || plasmoid.configuration.useTooltipFontSize) ? plasmoid.configuration.tooltipFontSize : plasmoid.configuration.fontSize
+			font.family: widget.textFamily
 			font.weight: plasmoid.configuration.bold ? Font.Bold : Font.Normal
 			font.italic: plasmoid.configuration.italic
 			font.underline: plasmoid.configuration.underline
@@ -899,8 +908,8 @@ PlasmoidItem {
 			horizontalAlignment: Text.AlignLeft
 			wrapMode: Text.NoWrap
 			elide: Text.ElideNone
-			font.pointSize: plasmoid.configuration.useTooltipFontSize ? plasmoid.configuration.tooltipFontSize : plasmoid.configuration.fontSize
-			font.family: plasmoid.configuration.fontFamily || Kirigami.Theme.defaultFont.family
+			font.pointSize: (onDesktop || plasmoid.configuration.useTooltipFontSize) ? plasmoid.configuration.tooltipFontSize : plasmoid.configuration.fontSize
+			font.family: widget.textFamily
 			font.weight: plasmoid.configuration.bold ? Font.Bold : Font.Normal
 			font.italic: plasmoid.configuration.italic
 			font.underline: plasmoid.configuration.underline
