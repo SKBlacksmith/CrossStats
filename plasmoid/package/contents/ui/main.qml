@@ -119,6 +119,10 @@ PlasmoidItem {
 		readonly property string command: "cat " + runtimeDir + "/panel.html"
 		readonly property string tooltipCommand: "cat " + runtimeDir + "/tooltip.html"
 		readonly property string geomFile: runtimeDir + "/state/geom"
+		// Written by the desktop widget only (see pinItem.publishGeometry): the
+		// desktop's own usable width, glyph advance and fit flag — the panel never
+		// writes here, so the two publishers cannot clobber each other's file.
+		readonly property string desktopGeomFile: runtimeDir + "/state/geom-desktop"
 		readonly property bool clickEnabled: !!plasmoid.configuration.clickCommand
 		readonly property bool mousewheelEnabled: (plasmoid.configuration.mousewheelUpCommand || plasmoid.configuration.mousewheelDownCommand)
 		readonly property color textColor: plasmoid.configuration.textColor || Kirigami.Theme.textColor
@@ -647,14 +651,10 @@ PlasmoidItem {
 					// costs no extra process.
 					executable.exec(
 						"sh -c 'mkdir -p " + config.runtimeDir + "/state && "
-						// 5th field: our own form-factor code (2 = Planar desktop
-						// widget, else the panel edge). The daemon only uses it for
-						// [display].desktop_fit; old 4-field readers ignore it.
-						+ "printf \"%s %s %s %s %s\\n\" " + output.width + " "
+						+ "printf \"%s %s %s %s\\n\" " + output.width + " "
 						+ (glyphMetrics.advanceWidth / 10) + " "
 						+ (panelItem.isVertical ? 1 : 0) + " "
-						+ (tooltipGlyphMetrics.advanceWidth / 10) + " "
-						+ (plasmoid.formFactor === PlasmaCore.Types.Planar ? 2 : (panelItem.isVertical ? 1 : 0))
+						+ (tooltipGlyphMetrics.advanceWidth / 10)
 						+ " > " + config.geomFile + "'")
 				}
 			}
@@ -749,23 +749,20 @@ PlasmoidItem {
 		                              : pinText.contentHeight + pinText.topPadding + pinText.bottomPadding
 
 		// The daemon's fit must follow the widget's real width, not the other way
-		// round; these metrics give it the glyph advance at both font sizes.
+		// round; this metric gives it the glyph advance at the widget's own font
+		// (the one the text — and so the graphs page — is actually drawn with).
 		TextMetrics {
 			id: pinGlyphMetrics
 			font: pinText.font
 			text: "██████████"
 			onAdvanceWidthChanged: pinItem.publishGeometry()
 		}
-		TextMetrics {
-			id: pinTooltipGlyphMetrics
-			font.family: pinText.font.family
-			font.pointSize: pinText.font.pointSize
-			text: "██████████"
-			onAdvanceWidthChanged: pinItem.publishGeometry()
-		}
-		// Same contract as the panel's publisher, but for the desktop: usable is the
-		// text area inside the padding, and the form-factor code says whether the
-		// widget holds its width (3) or still sizes to content (2).
+		// The desktop widget publishes its own geometry to state/geom-desktop:
+		// usable is the text area inside the padding, the advance is the real
+		// glyph advance at the widget's own font, and the fit flag says whether
+		// the widget holds that width ([display].desktop_fit) or sizes itself to
+		// the content. The panel and its pinned popup never publish here — the
+		// panel does it from its own representation into state/geom.
 		property string lastGeom: ""
 		property int geomNonce: 0
 		function publishGeometry() {
@@ -777,9 +774,8 @@ PlasmoidItem {
 			var usable = pinText.width - pinText.leftPadding - pinText.rightPadding
 			if (usable <= 0 || pinGlyphMetrics.advanceWidth <= 0)
 				return
-			var line = usable + " " + (pinGlyphMetrics.advanceWidth / 10) + " 0 "
-				+ (pinTooltipGlyphMetrics.advanceWidth / 10) + " "
-				+ (pinItem.fitWidth ? 3 : 2)
+			var line = usable + " " + (pinGlyphMetrics.advanceWidth / 10) + " "
+				+ (pinItem.fitWidth ? 1 : 0)
 			if (line === lastGeom)
 				return
 			lastGeom = line
@@ -788,8 +784,15 @@ PlasmoidItem {
 			// re-publish of the same width could vanish.
 			executable.exec(
 				"sh -c 'mkdir -p " + config.runtimeDir + "/state && "
-				+ "printf \"%s %s %s %s %s\\n\" " + line
-				+ " > " + config.geomFile + "' # " + (++geomNonce))
+				+ "printf \"%s %s %s\\n\" " + line
+				+ " > " + config.desktopGeomFile + "' # " + (++geomNonce))
+		}
+		// Best effort: if this does not run, the file goes away with the session —
+		// a stale geometry must never keep driving the daemon after the widget
+		// is gone.
+		Component.onDestruction: {
+			if (onDesktop)
+				executable.exec("rm -f " + config.desktopGeomFile)
 		}
 		// A drag is a resize too: remember where it ended, so the width survives
 		// restarts and the layout stops re-deriving it from the text.
