@@ -19,7 +19,7 @@
 		"License": "GPL-2.0-or-later",
 		"Name": "Cross Stats",
 		"Version": "1.0.1",
-		"Website": "https://github.com/lucazade/pirostats"
+		"Website": "https://github.com/SKBlacksmith/CrossStats"
 	},
 	"X-Plasma-API-Minimum-Version": "6.0"
 }
