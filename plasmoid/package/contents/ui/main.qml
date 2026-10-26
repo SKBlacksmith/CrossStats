@@ -11,6 +11,13 @@ import org.kde.plasma.plasma5support as Plasma5Support
 
 PlasmoidItem {
 	id: widget
+	// Planar form factor = the widget lives on the desktop (not the panel). Must
+	// live HERE, at the root: readOutputs() and the HoverHandler consult it, and
+	// pinItem's own onDesktop id is not resolvable from their scope (QML ids only
+	// span their own component; a cross-scope reference throws at runtime —
+	// ReferenceError spam every poll, freezing the widget after its first frame,
+	// 2026-10-26). Keep the expression in one place.
+	readonly property bool onDesktop: plasmoid.formFactor === PlasmaCore.Types.Planar
 
 	// https://github.com/KDE/plasma-workspace/blob/master/dataengines/executable/executable.h
 	// https://github.com/KDE/plasma-workspace/blob/master/dataengines/executable/executable.cpp
@@ -436,7 +443,7 @@ PlasmoidItem {
 		// QMetaStringTable::enter (12%+ of a core after a day; perf-confirmed
 		// 2026-10-26). On the desktop the tooltip refreshes on hover only, like
 		// the panel's; the pinned popup keeps its own unconditional live refresh.
-		if (widget.tooltipHovered || (widget.expanded && !pinItem.onDesktop))
+		if (widget.tooltipHovered || (widget.expanded && !widget.onDesktop))
 			widget.runTooltipCommand()
 	}
 
@@ -596,7 +603,7 @@ PlasmoidItem {
 				// on the desktop widget, so the bare guard would make tooltipHovered
 				// unreachable there and the hover refresh (and the tooltip itself)
 				// dead. Only the pinned popup hands the refresh to onExpandedChanged.
-				if (widget.expanded && !pinItem.onDesktop)
+				if (widget.expanded && !widget.onDesktop)
 					return
 				// tooltipHovered IS the gate readOutputs consults; setting it is what
 				// opens and closes the tooltip's share of the watcher.
