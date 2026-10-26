@@ -427,7 +427,16 @@ PlasmoidItem {
 		// the tooltip's RichText on every text change, so re-reading it while nobody is
 		// looking is work for no one. There is no catching up to do when a hover starts:
 		// the daemon renders every poll regardless, so the file is always fresh.
-		if (widget.tooltipHovered || widget.expanded)
+		// Desktop widget (Planar): Plasma keeps `expanded === true` permanently
+		// after the first interaction, so a bare expanded-gate here re-cats the
+		// tooltip every poll — and runTooltipCommand() nonces each cat, so that
+		// is a NEW DataSource source string (a permanent property in the
+		// DataSource's dynamic meta-object, never removed) every 1.5 s. Hours of
+		// that burned plasmashell CPU in QMetaObjectBuilder::toMetaObject →
+		// QMetaStringTable::enter (12%+ of a core after a day; perf-confirmed
+		// 2026-10-26). On the desktop the tooltip refreshes on hover only, like
+		// the panel's; the pinned popup keeps its own unconditional live refresh.
+		if (widget.tooltipHovered || (widget.expanded && !pinItem.onDesktop))
 			widget.runTooltipCommand()
 	}
 
@@ -583,8 +592,12 @@ PlasmoidItem {
 		HoverHandler {
 			id: panelHover
 			onHoveredChanged: {
-				if (widget.expanded)
-					return   // pinned: onExpandedChanged owns the refresh
+				// Same Planar caveat as in readOutputs: expanded is permanently true
+				// on the desktop widget, so the bare guard would make tooltipHovered
+				// unreachable there and the hover refresh (and the tooltip itself)
+				// dead. Only the pinned popup hands the refresh to onExpandedChanged.
+				if (widget.expanded && !pinItem.onDesktop)
+					return
 				// tooltipHovered IS the gate readOutputs consults; setting it is what
 				// opens and closes the tooltip's share of the watcher.
 				widget.tooltipHovered = hovered
