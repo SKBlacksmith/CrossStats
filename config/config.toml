@@ -56,7 +56,7 @@ items_remove = ["battery_sys"]
 # never configured: every page sizes to the main page's canonical (max) width.
 
 [tooltip]
-order = ["cpumem", "drives", "gpu", "thermal", "batteries", "io", "load"]
+order = ["cpumem", "drives", "gpu", "thermal", "batteries", "io", "system"]
 
 [tooltip.cpumem]
 title = "CPU & MEM"
@@ -85,9 +85,9 @@ items = ["battery_sys", "battery_mouse", "battery_kbd"]
 title = "I/O"
 items = ["disk_io", "net_speed", "net_device_ip", "wifi_ssid_signal"]
 
-[tooltip.load]
-title = "LOAD"
-items = ["uptime", "load_avg"]
+[tooltip.system]
+title = "SYSTEM"
+items = ["uptime", "load_avg", "system_info"]
 
 
 # ── Pages ─────────────────────────────────────────────────────────────────────

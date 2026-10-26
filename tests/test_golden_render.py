@@ -48,6 +48,11 @@ def _full_readings() -> Readings:
         cpu_history=[10, 20, 30, 40, 50, 60, 70, 80, 73, 65] * 2,
         mem_history=[15, 25, 35, 45, 55, 42, 38, 44, 50, 42] * 2,
         uptime=123456, load_avg=(1.2, 0.9, 0.7),
+        system_info={
+            "os": "Arch Linux", "kernel": "7.2.11-arch1-1", "plasma": "6.8.1",
+            "frameworks": "6.31.0", "qt": "6.12.0", "mesa": "26.2.5",
+            "vulkan": "1.4.363 / 1.4.354 (RADV)",
+        },
         top_process=[("plasmashell", 12), ("firefox", 8)],
         mem_usage=42, mem_used_gb=13, mem_total_gb=32, swap_usage=10,
         net_up_bps=500000, net_down_bps=2000000,

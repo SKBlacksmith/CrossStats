@@ -153,8 +153,9 @@ METRICS: dict[str, Metric] = dict([
     _m("wifi_rx",          needs={"net_info", "wifi_link"}, gate=_g_wifi),
 
     # ── system (tooltip-only) ──
-    _m("uptime",      needs={"uptime"},   surfaces=Surface.TOOLTIP),
-    _m("load_avg",    needs={"load_avg"}, surfaces=Surface.TOOLTIP),
+    _m("uptime",      needs={"uptime"},     surfaces=Surface.TOOLTIP),
+    _m("load_avg",    needs={"load_avg"},   surfaces=Surface.TOOLTIP),
+    _m("system_info", needs={"system_info"}, surfaces=Surface.TOOLTIP),
     _m("top_process", needs={"top_process"}, surfaces=Surface.TOOLTIP, intrinsic_shape=Shape.TRIPLE_L),
 
     # ── misc ──

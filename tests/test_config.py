@@ -211,18 +211,18 @@ def test_load_config_missing_path_returns_no_machine(tmp_path):
 def test_load_config_section_schema(tmp_path):
     toml_text = """
 [tooltip]
-order = ["live", "load"]
+order = ["live", "system"]
 [tooltip.live]
 title = "Live"
 items = ["cpu_usage:spark_value", "mem_usage:spark_value"]
-[tooltip.load]
-title = "Load"
-items = ["uptime", "load_avg"]
+[tooltip.system]
+title = "System"
+items = ["uptime", "load_avg", "system_info"]
 """
     path = tmp_path / "config.toml"
     path.write_text(toml_text)
     cfg = load_config(path)
-    assert [s.key for s in cfg.tooltip.sections] == ["live", "load"]
+    assert [s.key for s in cfg.tooltip.sections] == ["live", "system"]
     assert cfg.tooltip.has("uptime")
     assert cfg.tooltip.sections[0].title == "Live"
 

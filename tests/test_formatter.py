@@ -379,6 +379,34 @@ def test_panel_has_no_title_rows_and_no_separators():
     assert not any(isinstance(e, Separator) for e in entries)
 
 
+def test_system_section_keeps_uptime_and_load_then_lists_runtime_versions():
+    cfg = Config()
+    cfg.labels.update({
+        "delimiter": ":", "uptime": "Uptime", "load_avg": "Load avg",
+        "system_info_os": "OS", "system_info_kernel": "Kernel",
+        "system_info_plasma": "Plasma", "system_info_frameworks": "KDE Frameworks",
+        "system_info_qt": "Qt", "system_info_mesa": "Mesa", "system_info_vulkan": "Vulkan",
+    })
+    cfg.tooltip = Surface(sections=[Section(
+        key="system", title="SYSTEM", items=["uptime", "load_avg", "system_info"]
+    )])
+    fmt = PanelFormatter(cfg, _bare_hw())
+    readings = Readings(
+        uptime=3600, load_avg=(0.1, 0.2, 0.3),
+        system_info={
+            "os": "Arch Linux", "kernel": "7.2.11-arch1-1", "plasma": "6.8.1",
+            "frameworks": "6.31.0", "qt": "6.12.0", "mesa": "26.2.5",
+            "vulkan": "1.4.363 / 1.4.354 (RADV)",
+        },
+    )
+    html = fmt.format_tooltip(readings)
+    assert "SYSTEM" in html
+    assert html.index("Uptime:") < html.index("Load avg:") < html.index("OS:")
+    for value in ("Arch Linux", "7.2.11-arch1-1", "6.8.1", "6.31.0", "6.12.0",
+                  "26.2.5", "1.4.363 / 1.4.354 (RADV)"):
+        assert value in html
+
+
 # ── Disk rows hidden without real data ────────────────────────────────────────
 
 def test_hd_temp_row_empty_without_temp():

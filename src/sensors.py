@@ -19,6 +19,7 @@ from typing import Callable, Optional
 
 import psutil
 
+from system_info import read_system_info
 from config import BRAILLE_LENGTH_MULTIPLIER, Config, SensorOverrides
 from netlink import Routes
 from nl80211 import Nl80211, Rate as WifiRate
@@ -376,6 +377,7 @@ class Readings:
 
     screen_brightness: Optional[int] = None
     system_updates: Optional[int] = None
+    system_info: dict[str, str] = field(default_factory=dict)
     server_ok: Optional[bool] = None
     # External IP / geo, read from the updater-maintained JSON (no network I/O).
     wan_ip: Optional[str] = None
@@ -501,6 +503,10 @@ def collect(
     if "load_avg" in caps:
         with timed_section(timings, "load_avg"):
             r.load_avg = _read_load_avg()
+
+    if "system_info" in caps and not skip_slow:
+        with timed_section(timings, "system_info"):
+            r.system_info = read_system_info()
 
     if "top_process" in caps and not skip_slow:
         with timed_section(timings, "top_process"):

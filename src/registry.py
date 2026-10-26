@@ -145,6 +145,7 @@ _RENDER.update({
     # ── system ──
     ("uptime", Form.VALUE): (lambda f, ident, r, t: [f._uptime(r, t)]),
     ("load_avg", Form.VALUE): (lambda f, ident, r, t: [f._load_avg(r, t)]),
+    ("system_info", Form.VALUE): (lambda f, ident, r, t: f._system_info(r, t)),
     ("system_updates", Form.VALUE): (lambda f, ident, r, t: [f._system_updates(r, t)]),
     ("server_check", Form.VALUE): (lambda f, ident, r, t: [f._server_check(r, t)]),
     ("wan_ip",  Form.VALUE): (lambda f, ident, r, t: f._string_row("wan_ip",  r.wan_ip,  t)),

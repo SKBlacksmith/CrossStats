@@ -939,6 +939,20 @@ class PanelFormatter:
         ])
         return [label_cell, _val_cell(joined, ident=Ident("load_avg", "value"))]
 
+    def _system_info(self, r: Readings, tooltip: bool) -> list[Row]:
+        """OS/runtime version rows, in a stable order beneath uptime + load."""
+        if not tooltip or not r.system_info:
+            return []
+        ident = Ident("system_info", "value")
+        delimiter = self._cfg.labels.get("delimiter", "")
+        rows: list[Row] = []
+        for key in ("os", "kernel", "plasma", "frameworks", "qt", "mesa", "vulkan"):
+            label = self._cfg.labels.get(f"system_info_{key}", key.title())
+            label_cell = Cell(text=f"{label}{delimiter}", css_class=f"label {ident.css}")
+            value = r.system_info.get(key) or EMPTY_VALUE
+            rows.append([label_cell, _val_cell(value, ident=ident)])
+        return rows
+
     def _top_process(self, r: Readings, tooltip: bool) -> list[Row]:
         cfg = self._cfg
         max_len = cfg.display.top_process_name_max_len
