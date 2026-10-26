@@ -944,11 +944,10 @@ class PanelFormatter:
         if not tooltip or not r.system_info:
             return []
         ident = Ident("system_info", "value")
-        delimiter = self._cfg.labels.get("delimiter", "")
         rows: list[Row] = []
         for key in ("os", "kernel", "plasma", "frameworks", "qt", "mesa", "vulkan"):
             label = self._cfg.labels.get(f"system_info_{key}", key.title())
-            label_cell = Cell(text=f"{label}{delimiter}", css_class=f"label {ident.css}")
+            label_cell = self._label_cell(ident, tooltip, text=label)
             value = r.system_info.get(key) or EMPTY_VALUE
             rows.append([label_cell, _val_cell(value, ident=ident)])
         return rows

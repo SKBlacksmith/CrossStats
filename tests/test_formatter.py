@@ -390,6 +390,8 @@ def test_system_section_keeps_uptime_and_load_then_lists_runtime_versions():
     cfg.tooltip = Surface(sections=[Section(
         key="system", title="SYSTEM", items=["uptime", "load_avg", "system_info"]
     )])
+    glyph = "\U000f033d"
+    cfg.icons["system_info"] = glyph
     fmt = PanelFormatter(cfg, _bare_hw())
     readings = Readings(
         uptime=3600, load_avg=(0.1, 0.2, 0.3),
@@ -405,6 +407,8 @@ def test_system_section_keeps_uptime_and_load_then_lists_runtime_versions():
     for value in ("Arch Linux", "7.2.11-arch1-1", "6.8.1", "6.31.0", "6.12.0",
                   "26.2.5", "1.4.363 / 1.4.354 (RADV)"):
         assert value in html
+    # one shared glyph for every version row: no per-field icons exist for these
+    assert html.count(glyph) == 7
 
 
 # ── Disk rows hidden without real data ────────────────────────────────────────
