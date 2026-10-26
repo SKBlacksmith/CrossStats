@@ -3,20 +3,29 @@
 	"KPlugin": {
 		"Authors": [
 			{
-				"Name": "Luca Forina"
+				"Name": "Luca Forina",
+				"Website": "https://github.com/lucazade/pirostats"
 			},
 			{
 				"Name": "Chris Holland (Zren)"
+			},
+			{
+				"Name": "SKBlacksmith",
+				"Website": "https://github.com/SKBlacksmith/CrossStats"
+			},
+			{
+				"Name": "Miss Smith",
+				"Website": "https://github.com/SKBlacksmith/CrossStats"
 			}
 		],
 		"Category": "System Information",
-		"Description": "System stats in the panel and a paginated tooltip, rendered by the PiroStats daemon.",
+		"Description": "Cross Stats — a fork of PiroStats by Luca Forina (https://github.com/lucazade/pirostats): system stats in the panel and a paginated tooltip, rendered by the pirostats daemon, with interface-specific networking, WAN info and desktop-fit extensions.",
 		"Icon": "pirostats",
 		"Id": "com.github.lucazade.pirostats",
 		"License": "GPL-2.0-or-later",
-		"Name": "PiroStats",
-		"Version": "1",
-		"Website": "https://github.com/lucazade/pirostats"
+		"Name": "Cross Stats",
+		"Version": "1.0.1",
+		"Website": "https://github.com/SKBlacksmith/CrossStats"
 	},
 	"X-Plasma-API-Minimum-Version": "6.0"
 }
