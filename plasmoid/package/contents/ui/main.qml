@@ -441,10 +441,24 @@ PlasmoidItem {
 		// DataSource's dynamic meta-object, never removed) every 1.5 s. Hours of
 		// that burned plasmashell CPU in QMetaObjectBuilder::toMetaObject →
 		// QMetaStringTable::enter (12%+ of a core after a day; perf-confirmed
-		// 2026-10-26). On the desktop the tooltip refreshes on hover only, like
-		// the panel's; the pinned popup keeps its own unconditional live refresh.
-		if (widget.tooltipHovered || (widget.expanded && !widget.onDesktop))
+		// 2026-10-26). The reads themselves are necessary — the desktop rep
+		// renders tooltipText — so the desktop branch below keeps the cadence
+		// and drops only the nonce; the popup keeps its own live refresh too.
+		if (widget.onDesktop) {
+			// The desktop full rep renders tooltipText (the rich layout), so it
+			// needs a tooltip read EVERY poll - that was the load-bearing half of
+			// the old `expanded` gate on Planar widgets, where expanded is true
+			// forever. Do it with the STABLE source name, not execOnce: one read
+			// per poll can never race a still-connected source, and unlike the
+			// nonced cat it does not mint a new DataSource property every 1.5 s
+			// (that accumulation burned plasmashell in QMetaObjectBuilder/
+			// QMetaStringTable - see the churn investigation, 2026-10-26).
+			executable.exec(config.tooltipCommand)
+		} else if (widget.tooltipHovered || widget.expanded) {
+			// Panel/popup: reads are event-driven (hover, pinned popup), so keep
+			// the nonce that stops a rapid re-cat from being dropped as a duplicate.
 			widget.runTooltipCommand()
+		}
 	}
 
 	Component.onCompleted: {
